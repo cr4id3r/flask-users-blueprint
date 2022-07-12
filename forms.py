@@ -1,26 +1,33 @@
-from flask.ext.wtf import Form, TextField, PasswordField, validators, BooleanField, html5, HiddenField
-from models import User
+from flask_wtf import FlaskForm
+from sqlalchemy import select
+from wtforms import TextAreaField, PasswordField, validators, BooleanField, HiddenField, EmailField
+from wtforms.validators import DataRequired
 
-class LoginForm(Form):
-    email = TextField('Email Address', [
-        validators.Required()
+from .models import User
+from .utils import get_user
+from ...datastore.db_connection import session
+
+
+class LoginForm(FlaskForm):
+    email = TextAreaField('Email Address', [
+        DataRequired()
     ])
     password = PasswordField('Password', [
-        validators.Required()
+        DataRequired()
     ])
 
 
     def __init__(self, *args, **kwargs):
-        Form.__init__(self, *args, **kwargs)
+        FlaskForm.__init__(self, *args, **kwargs)
         self.user = None
 
     def validate(self):
-
-        form_validation = Form.validate(self)
+        form_validation = FlaskForm.validate(self)
         if not form_validation:
             return False
-        user = User.query.filter_by(
-            email=self.email.data).first()
+
+        user = get_user(email=self.email.data)
+
         if user is None:
             self.email.errors.append('Email not registered')
             return False
@@ -33,44 +40,45 @@ class LoginForm(Form):
         return True
 
 
-class RegistrationForm(Form):
-    email = html5.EmailField('Email Address', [
-        validators.Required(),
+class RegistrationForm(FlaskForm):
+    email = EmailField('Email Address', [
+        DataRequired()
     ])
     password = PasswordField('New Password', [
-        validators.Required(),
+        DataRequired(),
         validators.EqualTo('confirm', message='Passwords must match')
     ])
     confirm = PasswordField('Repeat Password')
 
     def __init__(self, *args, **kwargs):
-        Form.__init__(self, *args, **kwargs)
+        FlaskForm.__init__(self, *args, **kwargs)
 
     def validate(self):
 
-        form_validation = Form.validate(self)
+        form_validation = FlaskForm.validate(self)
         if not form_validation:
             return False
 
-        user = User.query.filter_by(email=self.email.data).first()
+        stmt = select(User).where(User.email == self.email.data)
+        user = session.execute(stmt).first()
         if user is not None:
             self.email.errors.append('Email is already registered')
             return False
 
-
         return True
 
-class EmailAuthInitiateForm(Form):
-    email = html5.EmailField('Email Address', [
-        validators.Required()
+
+class EmailAuthInitiateForm(FlaskForm):
+    email = EmailField('Email Address', [
+        DataRequired()
     ])
 
     def __init__(self, *args, **kwargs):
-        Form.__init__(self, *args, **kwargs)
+        FlaskForm.__init__(self, *args, **kwargs)
         self.user = None
 
     def validate(self):
-        form_validation = Form.validate(self)
+        form_validation = FlaskForm.validate(self)
         if not form_validation:
             return False
 

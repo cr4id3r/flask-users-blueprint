@@ -1,26 +1,19 @@
-from database import db
+from sqlalchemy import Column, Integer, String
+from werkzeug.security import generate_password_hash, check_password_hash
 
-from werkzeug import generate_password_hash, check_password_hash
+# from database import db
+from src.datastore.db_connection import Base
 
-class Role(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(60))
 
-    def __repr__(self):
-        return self.name
+class User(Base):
+    __tablename__ = 'User'
+    __table_args__ = {'extend_existing': True}
 
-roles = db.Table('roles',
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id')),
-    db.Column('role_id', db.Integer, db.ForeignKey('role.id'))
-)
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120))
-    username = db.Column(db.String(16))
-    password = db.Column(db.String(60))
-    roles = db.relationship('Role', secondary=roles, backref=db.backref('users', lazy='dynamic'))
-    email_auth_hash = db.Column(db.String(120))
+    id = Column(Integer, primary_key=True)
+    email = Column(String(120))
+    username = Column(String(50))
+    password = Column(String(350))
+    email_auth_hash = Column(String(120))
 
     def check_password(self, password):
         return check_password_hash(self.password, password)
@@ -34,9 +27,9 @@ class User(db.Model):
                 return True
         return False
 
-
     def __repr__(self):
         return self.username
+
 
 # Flask-Login User Object Wrapper
 class FLUserWrapper(object):
@@ -53,5 +46,12 @@ class FLUserWrapper(object):
         return False
 
     def get_id(self):
-        return unicode(self._user.id)
+        return self._user.id
 
+
+def row2dict(row):
+    d = {}
+    for column in row.__table__.columns:
+        d[column.name] = str(getattr(row, column.name))
+
+    return d
