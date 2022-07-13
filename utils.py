@@ -11,7 +11,7 @@ def get_user(**kwargs):
 
     found_user = users.scalar()
 
-    return found_user.__dict__ if found_user else None
+    return found_user if found_user else None
 
 
 class UserClass(UserMixin):

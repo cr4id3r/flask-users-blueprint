@@ -9,7 +9,7 @@ from ...datastore.db_connection import session
 
 
 class LoginForm(FlaskForm):
-    email = TextAreaField('Email Address', [
+    email = EmailField('Email Address', [
         DataRequired()
     ])
     password = PasswordField('Password', [
