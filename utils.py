@@ -1,7 +1,7 @@
 from flask import g
 from flask_login import UserMixin
 
-from models import User
+from .models import User
 
 
 def get_user(**kwargs):
