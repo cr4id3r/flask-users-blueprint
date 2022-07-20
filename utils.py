@@ -1,11 +1,11 @@
+from flask import g
 from flask_login import UserMixin
 
-from blueprints.users_blueprint.models import User
-from datastore.db_connection import session
+from models import User
 
 
 def get_user(**kwargs):
-    users = session.query(User)
+    users = g.db_session.query(User)
     for attr_element, attr_value in kwargs.items():
         users = users.filter(getattr(User, attr_element) == attr_value)
 
