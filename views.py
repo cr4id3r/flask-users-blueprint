@@ -3,50 +3,36 @@ import random, string
 from flask import Blueprint, request, render_template, redirect, abort
 from sqlalchemy import select
 
-from .models import User, FLUserWrapper, row2dict
-from .forms import LoginForm, RegistrationForm, EmailAuthInitiateForm
+# TODO: Fix dependencies to allow use isolated
+from blueprints.users_blueprint.models import FLUserWrapper, row2dict
+from blueprints.users_blueprint.forms import LoginForm, RegistrationForm, EmailAuthInitiateForm
 
 from flask_login import current_user, login_required, login_user, logout_user
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from ...datastore.db_connection import session
+from blueprints.users_blueprint.utils import get_user, register_user
 
-app = Blueprint('users', __name__, template_folder='templates', url_prefix='/users')
+users_blueprint_app = Blueprint('users', __name__, template_folder='templates', url_prefix='/users')
 
 
-@app.route('/<int:user_id>')
+@users_blueprint_app.route('/<int:user_id>')
 def user_view(user_id):
-    user = session.query(User).filter(User.id == user_id).scalar()
+    user = get_user(id=user_id)
     return render_template("user.html", user=row2dict(user))
 
 
-@app.route('/register', methods=['GET', 'POST'])
+@users_blueprint_app.route('/register', methods=['GET', 'POST'])
 def register():
     form = RegistrationForm()
 
     if form.validate_on_submit():
-        new_user = User()
-        #Generate a username
-        new_username = form.email.data.split('@')[0]
-        i = 0
-        users_with_name = 1
-        while users_with_name is not None:
-            stmt = select(User).where(User.username == new_username)
-            users_with_name = session.execute(stmt).first()
-            if users_with_name is not None:
-                i = i + 1
-                new_username = new_username + "-" + str(i)
-
-        new_user.username = new_username
-        new_user.email = form.email.data
-        new_user.set_password(form.password.data)
-        session.add(new_user)
-        session.commit()
+        register_user(email=form.email.data, password=form.password.data)
         return redirect('/')
+
     return render_template('registration.html', form=form)
 
 
-@app.route('/login', methods=['GET', 'POST'])
+@users_blueprint_app.route('/login', methods=['GET', 'POST'])
 def login():
     if not current_user.is_anonymous:
         return redirect('/users/%s' % current_user.id)
@@ -62,14 +48,14 @@ def login():
     return render_template('login.html', form=form)
 
 
-@app.route("/logout")
+@users_blueprint_app.route("/logout")
 @login_required
 def logout():
     logout_user()
     return redirect('/')
 
 
-@app.route("/email-auth", methods=['GET', 'POST'])
+@users_blueprint_app.route("/email-auth", methods=['GET', 'POST'])
 def email_auth():
 
     form = EmailAuthInitiateForm()
@@ -83,20 +69,20 @@ def email_auth():
     return render_template('email-auth.html', form=form)
 
 
-@app.route("/email-auth-confirm", methods=['GET', 'POST'])
-def password_reset_change():
-    if 'id' in request.args and 'reset-key' in request.args:
-        user_id = request.args.get('id')
-        reset_key = request.args.get('reset-key')
-        user = User.query.filter_by(id=user_id).first()
-        print(user)
-        if check_password_hash(user.email_auth_hash, reset_key):
-            user.reset_password_hash = ''
-            db.session.commit()
-            user = FLUserWrapper(user)
-            login_user(user)
-            return redirect('/')
-    abort(403)
+# @users_blueprint_app.route("/email-auth-confirm", methods=['GET', 'POST'])
+# def password_reset_change():
+#     if 'id' in request.args and 'reset-key' in request.args:
+#         user_id = request.args.get('id')
+#         reset_key = request.args.get('reset-key')
+#         user = User.query.filter_by(id=user_id).first()
+#         print(user)
+#         if check_password_hash(user.email_auth_hash, reset_key):
+#             user.reset_password_hash = ''
+#             db.session.commit()
+#             user = FLUserWrapper(user)
+#             login_user(user)
+#             return redirect('/')
+#     abort(403)
 
 
 def user_debug():

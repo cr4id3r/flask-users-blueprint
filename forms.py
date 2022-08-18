@@ -1,3 +1,4 @@
+from flask import g
 from flask_wtf import FlaskForm
 from sqlalchemy import select
 from wtforms import TextAreaField, PasswordField, validators, BooleanField, HiddenField, EmailField
@@ -5,7 +6,6 @@ from wtforms.validators import DataRequired
 
 from .models import User
 from .utils import get_user
-from ...datastore.db_connection import session
 
 
 class LoginForm(FlaskForm):
@@ -60,7 +60,7 @@ class RegistrationForm(FlaskForm):
             return False
 
         stmt = select(User).where(User.email == self.email.data)
-        user = session.execute(stmt).first()
+        user = g.db.session.execute(stmt).first()
         if user is not None:
             self.email.errors.append('Email is already registered')
             return False
