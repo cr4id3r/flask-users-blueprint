@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy import Column, Integer, String
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -28,7 +30,7 @@ class User(Base):
         return False
 
     def __repr__(self):
-        return self.username
+        return '<User %r>' % self.email
 
 
 # Flask-Login User Object Wrapper
