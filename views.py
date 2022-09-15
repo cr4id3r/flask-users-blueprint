@@ -1,3 +1,4 @@
+import os
 import random, string
 
 from flask import Blueprint, request, render_template, redirect, abort
@@ -12,8 +13,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 from blueprints.users_blueprint.utils import get_user, register_user
 
-users_blueprint_app = Blueprint('users', __name__, template_folder='templates', url_prefix='/users')
-
+users_blueprint_app = Blueprint('users', __name__,
+                                template_folder='templates',
+                                static_folder='static',
+                                url_prefix='/users'
+                                )
 
 @users_blueprint_app.route('/<int:user_id>')
 def user_view(user_id):
